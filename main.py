@@ -7,6 +7,10 @@ import sqlite3
 import urllib.parse
 import re
 
+# Not needed in production 
+# from dotenv import load_dotenv
+# load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+
 client = discord.Client()
 conn = sqlite3.connect('legends.db')
 c = conn.cursor()
@@ -38,7 +42,6 @@ async def on_message(message):
         if message.content.startswith('%%admin%%'):
             
             command = message.content.lower().split('\"')
-            print(command)
 
             if 'add'in command[0]:
 
@@ -56,6 +59,14 @@ async def on_message(message):
 
                 except:
                     return await message.channel.send("Some error occured! Try again, or contact @ghoul")
+
+            if 'setbreakpoint' in command[0]:
+                    try: 
+                        os.environ['LEGEND_BREAKPOINT'] = command[1]
+                        return await message.channel.send("Success! Messages breakpoint set.")
+                    except:
+                        return await message.channel.send("Error occured. Contact `@ghoul`")
+                            
 
             return
 
@@ -187,7 +198,7 @@ async def on_message(message):
         # LEGENDS
         # ===========================================================================================================
         if message.content.lower().startswith('$legends'):
-                query = c.execute('SELECT * FROM legends WHERE msgs > ? ORDER BY msgs DESC', (bot_data.LEGEND_BREAKPOINT, ))
+                query = c.execute('SELECT * FROM legends WHERE msgs > ? ORDER BY msgs DESC', (os.environ['LEGEND_BREAKPOINT'], ))
                 result = query.fetchall()
                 
                 legends = "*Name*\t\t\t*Messages*\n"
