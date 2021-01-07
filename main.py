@@ -1,10 +1,10 @@
 import discord
 import os
 import bot_data
-import requests
 from io import BytesIO
 import sqlite3
 import urllib.parse
+import urllib.request
 import re
 
 # Not needed in production 
@@ -12,6 +12,7 @@ import re
 # load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 client = discord.Client()
+
 conn = sqlite3.connect('legends.db')
 c = conn.cursor()
 
@@ -19,8 +20,10 @@ print('legends.db connected..')
 
 @client.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
+        print('We have logged in as {0.user}'.format(client))
 
+async def on_disconnect():
+        print('Disconnected!')
 
 @client.event
 async def on_message(message):
@@ -122,11 +125,15 @@ async def on_message(message):
                         query = c.execute('SELECT * FROM theorems WHERE id=' + str(th_number))
 
                         result = query.fetchone()
+                        # return await message.channel.send(result[2])
 
-                        response = requests.get(result[2])
-                        img = BytesIO(response.content)
+                        fname = result[2].split('/')[-1]
 
-                        return await message.channel.send(file=discord.File(img, f'th_solution_{th_number + 1}.jpg'))
+                        img = None
+                        with urllib.request.urlopen(result[2]) as url:
+                                img = BytesIO(url.read())
+
+                        return await message.channel.send(file=discord.File(img, filename=fname), delete_after=60.0)
                 
                 except Exception:
                         return await message.channel.send('I can understand calc but I cannot understand you :disappointed_relieved:\nThere is either no question associated with `' + message.content + '` or the link expired. Contact `@Ghoul` if the link is expired')
